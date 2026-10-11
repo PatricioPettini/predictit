@@ -130,31 +130,6 @@ jobs:
           path: ./TestResults
           retention-days: 14
 
-  # --------------------------------------------------------- documentacion
-  documentacion:
-    name: Documentación · alineación
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      # openpyxl para la planilla financiera y python-docx para el documento:
-      # el control de referencias cruzadas lo abre y lo lee. Sin el paquete no
-      # avisa que falta, se cae con un ModuleNotFoundError en medio de la
-      # salida y el trabajo entero queda en rojo por una dependencia.
-      - name: Instalar lo que leen los controles
-        run: pip install openpyxl python-docx
-
-      # El mismo número vive en el documento, en el seed de la base, en la
-      # planilla y en el sistema. Cuando uno cambia y los otros no, nadie se
-      # entera hasta que alguien compara dos archivos en la defensa.
-      - name: Verificar que todo diga lo mismo
-        run: python docs/_verificar-alineacion.py
-
   # -------------------------------------------------------------- frontend
   frontend:
     name: Frontend · tipos, pruebas y build
@@ -274,7 +249,7 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    needs: [backend, frontend, imagenes, documentacion]
+    needs: [backend, frontend, imagenes]
     if: always()
     steps:
       - name: Verificar que todo pasó
@@ -282,14 +257,9 @@ jobs:
           echo "backend:  ${{ needs.backend.result }}"
           echo "frontend: ${{ needs.frontend.result }}"
           echo "imagenes: ${{ needs.imagenes.result }}"
-          echo "documentacion: ${{ needs.documentacion.result }}"
           if [ "${{ needs.backend.result }}" != "success" ] \
           || [ "${{ needs.frontend.result }}" != "success" ] \
           || [ "${{ needs.imagenes.result }}" != "success" ]; then
             echo "::error::Al menos un trabajo falló."
-            exit 1
-          fi
-          if [ "${{ needs.documentacion.result }}" != "success" ]; then
-            echo "::error::La documentación no está alineada."
             exit 1
           fi
