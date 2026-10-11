@@ -1,0 +1,47 @@
+Copyright (c) 2026 Patricio Ezequiel Pettini
+
+Todos los derechos reservados.
+
+Este software y su documentación se desarrollaron como Trabajo Final de
+Ingeniería en Sistemas Informáticos para la Universidad Abierta
+Interamericana. Su propósito es académico y de evaluación.
+
+Se autoriza a la Universidad Abierta Interamericana, a su cuerpo docente y a
+los evaluadores designados a acceder al código, ejecutarlo, estudiarlo y
+reproducirlo con fines de corrección y evaluación académica.
+
+Fuera de ese uso, no se concede autorización para copiar, modificar,
+distribuir, sublicenciar ni usar comercialmente este software o su
+documentación sin permiso escrito del autor.
+
+Se eligió una licencia cerrada y no una permisiva de manera deliberada. El
+trabajo describe un plan de negocio con la intención de explotarlo, y publicarlo
+bajo una licencia permisiva regalaría por adelantado los derechos que ese plan
+supone. Si más adelante el proyecto se abre, será una decisión tomada y no una
+que se arrastró desde el primer commit.
+
+EL SOFTWARE SE ENTREGA «TAL CUAL», SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O
+IMPLÍCITA, INCLUIDAS ENTRE OTRAS LAS GARANTÍAS DE COMERCIABILIDAD, ADECUACIÓN A
+UN PROPÓSITO PARTICULAR Y NO INFRACCIÓN. EN NINGÚN CASO EL AUTOR SERÁ
+RESPONSABLE POR NINGÚN RECLAMO, DAÑO U OTRA RESPONSABILIDAD DERIVADA DEL
+SOFTWARE O DE SU USO.
+
+Bibliotecas de terceros
+-----------------------
+
+El proyecto usa dependencias de terceros con sus propias licencias, que se
+conservan. Entre las principales:
+
+  - .NET y ASP.NET Core (Microsoft) ......................... MIT
+  - Microsoft.Data.SqlClient ................................ MIT
+  - QuestPDF ................................ Community License (uso gratuito
+                                              para organizaciones que facturan
+                                              menos de USD 1 M anuales)
+  - xUnit, FluentAssertions, coverlet ....................... Apache 2.0 / MIT
+  - React, React Router, TypeScript, Vite ................... MIT
+  - IBM Plex Sans / IBM Plex Mono ............................ SIL OFL 1.1
+
+La licencia de QuestPDF es la única con una condición que puede dejar de
+cumplirse: si el proyecto se explotara comercialmente y superara ese umbral de
+facturación, habría que pasar a la licencia paga o reemplazar la biblioteca.
+Está anotado en el ADR 0013.

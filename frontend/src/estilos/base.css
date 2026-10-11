@@ -1,0 +1,81 @@
+/*
+  Capa base: lo que no es token ni componente.
+
+  Estaba dentro de `tokens.css` hasta el rediseño 02. Se separa porque
+  `tokens.css` ahora baja tal cual del canvas de Claude Design y se reemplaza
+  entero cada vez: si el reset viviera ahí, cada bajada del canvas se llevaría
+  puestos la tipografía del cuerpo y el estilo de los enlaces.
+
+  Va después de `tokens.css` en `main.tsx`, porque consume sus variables.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#raiz {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fuente-ui);
+  -webkit-font-smoothing: antialiased;
+  /* Los números en tablas tienen que alinearse en columna. */
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+  color: var(--tx);
+  /* El glow va en el fondo de pagina y en ningun otro lado: es la regla 3 de
+     la capa de tokens. En el tema claro --glow-fondo vale `none` y queda solo
+     el color plano, porque sobre blanco un degrade se lee como mancha. */
+  background: var(--glow-fondo), var(--fondo);
+  background-attachment: fixed;
+}
+
+a {
+  color: var(--acento-tx);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--acento-tx);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* El textarea faltaba, y por eso el diagnostico y la solucion de una incidencia
+   se escribian en la monoespaciada del navegador: prosa en mono, dentro de una
+   interfaz que reserva la mono para codigos y numeros que se comparan. */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: var(--txt-cuerpo);
+  color: var(--tx);
+}
+
+/* El texto de ejemplo tambien es texto y tiene que leerse. El gris que pone el
+   navegador por su cuenta no llega al piso de 4,5:1 en el tema oscuro. */
+::placeholder {
+  color: var(--tx3);
+  opacity: 1;
+}
+
+body { font-size: var(--txt-cuerpo); line-height: 1.5; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }

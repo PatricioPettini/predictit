@@ -1,0 +1,295 @@
+# Integración continua de PredictIT.
+#
+# Tres trabajos independientes: backend, frontend e imágenes. Separados a
+# propósito: si falla el frontend quiero saber igual si el backend está bien, y
+# con un solo trabajo el primer fallo esconde todo lo demás.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Permite dispararlo a mano desde la pestaña Actions, que es lo que hace falta
+  # cuando se quiere confirmar que el pipeline sigue verde sin tocar el código.
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  # Las pruebas de integración corren contra un SQL Server real, no contra un
+  # doble: el sistema tiene disparadores, MERGE y BACKUP/RESTORE, y nada de eso
+  # se puede probar en memoria.
+  SA_PASSWORD: 'PredictIT_2026!'
+  # La del usuario de la aplicación. Es distinta de la de sa a propósito: es la
+  # misma separación que en producción, y así la CI prueba el camino real.
+  #
+  # No puede contener «predictit_app». La política de contraseñas de SQL Server
+  # rechaza una contraseña que contenga el nombre del login, y lo informa con un
+  # mensaje que dice otra cosa: «no es lo bastante compleja... al menos 8
+  # caracteres y tres de los cuatro juegos». La anterior era
+  # `PredictIT_App_2026!`, que cumple los cuatro juegos y tiene diecinueve
+  # caracteres, y fallaba por el nombre adentro. Comprobado contra el motor:
+  # con el nombre adentro la rechaza, sin el nombre la acepta.
+  APP_PASSWORD: 'Ci.Tfi-2026#Clave'
+
+jobs:
+  # --------------------------------------------------------------- backend
+  backend:
+    name: Backend · build y pruebas
+    runs-on: ubuntu-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'PredictIT_2026!'
+          MSSQL_PID: Developer
+        ports:
+          - 1433:1433
+        # El healthcheck del servicio evita el `sleep 30` que después falla en
+        # la máquina que tarda 35.
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'PredictIT_2026!' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+          --health-start-period 30s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Caché de NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/packages.lock.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # `--locked-mode`: se restaura exactamente el arbol congelado en los
+      # `packages.lock.json` y se falla si no coincide, en lugar de resolverlo
+      # de nuevo. Es lo que hace que lo que se prueba acá y lo que compila
+      # cualquiera sean el mismo conjunto de paquetes (OWASP A08).
+      - name: Restaurar
+        run: dotnet restore backend/PredictIT.sln --locked-mode
+
+      # `-warnaserror`: una advertencia que nadie mira es una advertencia que se
+      # acumula. Hoy el proyecto compila con cero, y esto es lo que lo mantiene.
+      - name: Compilar
+        run: dotnet build backend/PredictIT.sln --configuration Release --no-restore -warnaserror
+
+      - name: Aplicar el esquema y los datos
+        run: |
+          sudo apt-get update && sudo apt-get install -y mssql-tools18 unixodbc-dev || true
+          SQLCMD=$(command -v sqlcmd || echo /opt/mssql-tools18/bin/sqlcmd)
+          for s in 01-negocio-schema 02-servicio-schema 03-seed-servicio 04-seed-negocio 05-seed-traducciones; do
+            echo "-> $s.sql"
+            "$SQLCMD" -S localhost,1433 -U sa -P "$SA_PASSWORD" -C -b -I -f 65001 -i "db/$s.sql"
+          done
+          # El usuario con el que se conecta la aplicación. Las pruebas corren
+          # con él y no con sa: así un permiso que falte se ve acá y no en
+          # producción.
+          "$SQLCMD" -S localhost,1433 -U sa -P "$SA_PASSWORD" -C -b -I -f 65001 -v APP_PASSWORD="$APP_PASSWORD" -i db/06-usuario-de-aplicacion.sql
+
+      - name: Pruebas
+        env:
+          PREDICTIT_CNN_NEGOCIO: 'Server=localhost,1433;Database=PredictIT_Negocio;User Id=predictit_app;Password=${{ env.APP_PASSWORD }};TrustServerCertificate=True;Encrypt=True;'
+          PREDICTIT_CNN_SERVICIO: 'Server=localhost,1433;Database=PredictIT_Servicio;User Id=predictit_app;Password=${{ env.APP_PASSWORD }};TrustServerCertificate=True;Encrypt=True;'
+          # Las dos de arriba las usan las pruebas; las dos de abajo, la API.
+          # `LimitePorOrigenTests` la levanta de verdad con
+          # WebApplicationFactory, y la API arma su cadena desde su appsettings
+          # más PREDICTIT_DB_PASSWORD, y firma con PREDICTIT_JWT_CLAVE. Sin
+          # ellas no arranca —y hace bien: un valor por defecto sería una clave
+          # conocida—, así que la prueba fallaba con «Falta la contraseña de la
+          # base» y no por lo que la prueba mira.
+          PREDICTIT_DB_PASSWORD: ${{ env.APP_PASSWORD }}
+          # De usar y tirar, sólo para este trabajo. La de producción no está
+          # acá ni en el repositorio.
+          PREDICTIT_JWT_CLAVE: 'clave-de-integracion-continua-no-usar-en-produccion'
+        run: |
+          dotnet test backend/PredictIT.Tests \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=resultados.trx" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults
+
+      - name: Publicar resultados y cobertura
+        # `always()` para que el informe se publique también cuando las pruebas
+        # fallan, que es cuando más falta hace verlo.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-backend
+          path: ./TestResults
+          retention-days: 14
+
+  # --------------------------------------------------------- documentacion
+  documentacion:
+    name: Documentación · alineación
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # openpyxl para la planilla financiera y python-docx para el documento:
+      # el control de referencias cruzadas lo abre y lo lee. Sin el paquete no
+      # avisa que falta, se cae con un ModuleNotFoundError en medio de la
+      # salida y el trabajo entero queda en rojo por una dependencia.
+      - name: Instalar lo que leen los controles
+        run: pip install openpyxl python-docx
+
+      # El mismo número vive en el documento, en el seed de la base, en la
+      # planilla y en el sistema. Cuando uno cambia y los otros no, nadie se
+      # entera hasta que alguien compara dos archivos en la defensa.
+      - name: Verificar que todo diga lo mismo
+        run: python docs/_verificar-alineacion.py
+
+  # -------------------------------------------------------------- frontend
+  frontend:
+    name: Frontend · tipos, pruebas y build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm ci` y no `npm install`: instala exactamente el lock y falla si no
+      # coincide con el package.json. Un CI que puede cambiar sus dependencias
+      # no está probando lo mismo que corre en la máquina del autor.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar tipos
+        run: npx tsc --noEmit
+
+      - name: Pruebas
+        run: npx vitest run --reporter=verbose
+
+      - name: Build
+        run: npm run build
+
+      # Un texto nuevo escrito en castellano fijo no rompe nada: sale en
+      # castellano en las dos idiomas y nadie lo nota hasta la demostración.
+      # Esto lo detecta. No exige cero, exige que no suba.
+      - name: Textos fuera del diccionario
+        working-directory: .
+        run: python3 scripts/textos-sin-traducir.py --verificar
+
+  # ------------------------------------------------------------ dependencias
+  # A06 del OWASP Top 10: componentes con vulnerabilidades conocidas. Fijar las
+  # versiones no alcanza —una versión fijada también puede tener un CVE
+  # publicado la semana que viene— y sin este paso nadie se enteraría hasta que
+  # alguien lo busque a mano.
+  #
+  # No corta la construcción, avisa. Un CVE en una dependencia transitiva puede
+  # aparecer un martes sin que nadie haya tocado el proyecto, y bloquear la
+  # entrega por eso enseña a ignorar el rojo. Lo que hace es dejar el informe en
+  # el resumen del workflow.
+  dependencias:
+    name: Dependencias · vulnerabilidades conocidas
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Paquetes de .NET con vulnerabilidades
+        run: |
+          dotnet restore backend/PredictIT.sln --locked-mode
+          echo '### Paquetes de .NET' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          dotnet list backend/PredictIT.sln package --vulnerable --include-transitive             | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Paquetes de npm con vulnerabilidades
+        working-directory: ./frontend
+        run: |
+          echo '### Paquetes de npm' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          npm audit --audit-level=moderate | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------- imágenes
+  # Que las imágenes se construyan es parte de la verificación: un Dockerfile
+  # que dejó de compilar sólo se descubre cuando alguien intenta levantar el
+  # sistema, que suele ser el peor momento.
+  imagenes:
+    name: Docker · las dos imágenes se construyen
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Imagen de la API
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Imagen del frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # -------------------------------------------------------------- resumen
+  # Un único trabajo del cual depender para proteger la rama: agregar un job
+  # nuevo arriba no obliga a tocar la configuración de la rama.
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, imagenes, documentacion]
+    if: always()
+    steps:
+      - name: Verificar que todo pasó
+        run: |
+          echo "backend:  ${{ needs.backend.result }}"
+          echo "frontend: ${{ needs.frontend.result }}"
+          echo "imagenes: ${{ needs.imagenes.result }}"
+          echo "documentacion: ${{ needs.documentacion.result }}"
+          if [ "${{ needs.backend.result }}" != "success" ] \
+          || [ "${{ needs.frontend.result }}" != "success" ] \
+          || [ "${{ needs.imagenes.result }}" != "success" ]; then
+            echo "::error::Al menos un trabajo falló."
+            exit 1
+          fi
+          if [ "${{ needs.documentacion.result }}" != "success" ]; then
+            echo "::error::La documentación no está alineada."
+            exit 1
+          fi

@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PredictIT.Domain\PredictIT.Domain.csproj" />
+    <ProjectReference Include="..\PredictIT.DAO\PredictIT.DAO.csproj" />
+    <ProjectReference Include="..\PredictIT.Service\PredictIT.Service.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  
+    <!--
+      El XML de documentacion sale de los comentarios `///` y es lo que Swagger
+      muestra como descripcion de cada endpoint y de cada campo. Sin esto los
+      comentarios existen y no los ve nadie fuera del editor.
+
+      Se silencian dos avisos, los dos por el mismo motivo: documentar por
+      obligacion produce el peor comentario que hay, el que repite el nombre del
+      miembro. CS1591 es el aviso por cada miembro publico sin comentario, y
+      CS1573 el que aparece cuando un record documenta los parametros que lo
+      necesitan y no los que se explican solos.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
+  </PropertyGroup>
+
+</Project>

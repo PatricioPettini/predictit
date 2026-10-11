@@ -1,0 +1,17 @@
+# `node_modules` es lo que mas pesa del repositorio, y trae binarios compilados
+# para el sistema del host que no sirven en la imagen: el build hace `npm ci`
+# adentro y arma los suyos.
+#
+# Los patrones de .dockerignore no son recursivos, de ahi el `**/`.
+**/node_modules/
+dist/
+
+.env
+.env.local
+
+**/coverage/
+**/*.log
+
+**/.vscode/
+Dockerfile
+.dockerignore

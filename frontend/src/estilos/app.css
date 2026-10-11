@@ -1,0 +1,1183 @@
+/*
+  Componentes compartidos.
+
+  Los artboards usan estilos en línea porque el editor de diseño los necesita
+  así para poder editarlos. Acá esos mismos valores viven en clases: es la única
+  diferencia entre el diseño y la implementación, y evita repetir treinta
+  propiedades en cada celda de tabla.
+*/
+
+/* ------------------------------------------------------------------ estructura */
+
+.app {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.encabezado {
+  background: var(--sup);
+  border-bottom: 1px solid var(--linea);
+  padding: 14px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex: none;
+}
+
+.encabezado h1 {
+  font-size: var(--txt-titulo);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.encabezado .contexto {
+  font-size: var(--txt-tabla);
+  color: var(--tx2);
+  margin-top: 3px;
+}
+
+.encabezado .acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.cuerpo {
+  flex: 1;
+  padding: 14px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+/* Lo que entra en el cuerpo mide lo que mide, y el cuerpo scrollea.
+   Sin esto, al no entrar todo en la pantalla el flex reparte el faltante
+   encogiendo a sus hijos, y una tarjeta -que lleva `overflow: hidden` para
+   recortar sus esquinas- tiene minimo automatico cero: se aplasta a la altura
+   de sus bordes y su contenido desaparece. Le paso al desglose del riesgo de
+   la ficha del equipo, que quedo en 2 px de alto con 400 px adentro.
+   `.filtros` ya traia su propio `flex: none` por esta misma razon; esto lo
+   resuelve para todos en vez de ir tapando el agujero de a una pieza. */
+.cuerpo > * {
+  flex: none;
+}
+
+/* --------------------------------------------------------------- barra lateral */
+
+.sidebar {
+  width: var(--ancho-sidebar);
+  flex: none;
+  background: var(--sup);
+  border-right: 1px solid var(--linea);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar .marca {
+  padding: 18px 16px 14px 18px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.sidebar .marca b {
+  display: block;
+  /* El unico tamanio fuera de la escala, y a proposito: un logotipo no es
+     texto que se lee, es una marca. Meterlo en --txt-titulo lo pondria del
+     tamanio del titulo de pantalla y competirian. */
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--tx);
+}
+
+.sidebar .marca span {
+  display: block;
+  font-size: var(--txt-tabla);
+  color: var(--tx3);
+  margin-top: 3px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+}
+
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--alto-control);
+  padding: 0 10px;
+  border-radius: var(--radio-chip);
+  font-size: var(--txt-cuerpo);
+  color: var(--tx2);
+  font-weight: 400;
+}
+
+.sidebar nav a:hover {
+  background: var(--neutro-bg);
+  color: var(--tx);
+}
+
+.sidebar nav a.activo {
+  background: var(--acento-suave);
+  color: var(--acento-hover);
+  font-weight: 600;
+}
+
+.sidebar nav svg {
+  flex: none;
+}
+
+.sidebar .pie {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--linea-suave);
+  font-size: var(--txt-tabla);
+  color: var(--tx3);
+}
+
+.confignav {
+  width: var(--ancho-confignav);
+  flex: none;
+  /* Un escalon mas hundido que la barra principal: son dos niveles de
+     navegacion, y si las dos superficies fueran iguales el submenu pareceria
+     una segunda barra del mismo rango. */
+  background: var(--sup-2);
+  border-right: 1px solid var(--linea);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.confignav .rotulo {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.confignav a {
+  display: flex;
+  align-items: center;
+  padding: 7px 12px;
+  margin: 0 8px;
+  border-radius: var(--radio-chico);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx2);
+  /* El borde esta siempre, transparente: si apareciera recien al activarse,
+     el rotulo se correria tres pixeles cada vez que uno cambia de seccion. */
+  border-left: 3px solid transparent;
+}
+
+.confignav a:first-of-type { margin-top: 10px; }
+
+.confignav a:hover {
+  background: var(--sup-hover);
+  color: var(--tx);
+}
+
+.confignav a.activo {
+  background: var(--sup);
+  border-left-color: var(--acento);
+  color: var(--tx);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------- grillas
+   El patron de casi todas las pantallas: contenido a la izquierda y un panel
+   de contexto a la derecha. Estaba escrito en linea en siete pantallas, con
+   siete anchos distintos elegidos a ojo -340, 360, 380, 392, 400 y 420-, y
+   ninguno significaba algo distinto de los otros. Ahora es uno solo, y ademas
+   se puede adaptar: un estilo en linea le gana a cualquier media query. */
+
+.dos-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ancho-panel);
+  gap: var(--esp-4);
+  /* Cada tarjeta termina donde termina su contenido. Sin esto la columna
+     ancha se estiraba hasta el alto de la otra y quedaba media pantalla de
+     vacio debajo de una tabla de siete filas. */
+  align-items: start;
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(var(--columnas, 4), minmax(0, 1fr));
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+/* -------------------------------------------------------------------- tarjetas */
+
+.tarjeta {
+  background: var(--sup);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  overflow: hidden;
+}
+
+.tarjeta > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.tarjeta > header h2 {
+  font-size: var(--txt-seccion);
+  font-weight: 600;
+}
+
+.tarjeta > header .nota {
+  font-size: var(--txt-tabla);
+  color: var(--tx3);
+}
+
+/* ---------------------------------------------------------------------- tablas */
+
+thead th {
+  font-size: var(--txt-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  text-align: left;
+  padding: 0 12px;
+  height: var(--alto-control);
+  border-bottom: 1px solid var(--linea);
+  white-space: nowrap;
+}
+
+thead th:first-child,
+tbody td:first-child {
+  padding-left: 16px;
+}
+
+thead th:last-child,
+tbody td:last-child {
+  padding-right: 16px;
+}
+
+tbody td {
+  font-size: var(--txt-tabla);
+  padding: 0 12px;
+  /* `--fila-alto`, no `--alto-fila`: el nombre estaba invertido y la variable
+     no existia, asi que la altura caia en `auto` y las filas quedaban del alto
+     del texto. El efecto era doble y no se veia como un error: las tablas se
+     leian apretadas, y la densidad de Apariencia no cambiaba nada porque lo
+     unico que mueve es este token. */
+  height: var(--fila-alto);
+  border-bottom: 1px solid var(--linea-suave);
+  color: var(--tx);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Una celda corta no se parte en dos renglones habiendo lugar al lado. Los
+   anchos de columna estan en pixeles fijos -pensados para 1366- y en una
+   pantalla ancha sobra espacio mientras «Sala de servidores» se parte igual.
+   El `nowrap` deja que la columna crezca; la que absorbe es la ultima, que no
+   lo lleva. */
+tbody td.no-parte {
+  white-space: nowrap;
+}
+
+tbody tr:hover td {
+  /* Era #fbfcfc, un blanco literal: el unico color hardcodeado que quedaba en
+     esta hoja. En los temas oscuros pintaba la fila de blanco. */
+  background: var(--fila-hover);
+}
+
+.mono {
+  font-family: var(--fuente-mono);
+  font-size: var(--txt-tabla);
+  color: var(--tx);
+}
+
+.sub {
+  font-size: var(--txt-tabla);
+  color: var(--tx3);
+}
+
+.derecha {
+  text-align: right;
+}
+
+.centro {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------- estados */
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--txt-tabla);
+  color: var(--tx2);
+  white-space: nowrap;
+}
+
+.punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: var(--radio-chip);
+  font-size: var(--txt-tabla);
+  font-weight: 600;
+  white-space: nowrap;
+  /* Neutro por defecto. Antes el borde no tenia color propio y heredaba el del
+     texto, asi que un chip sin modificador quedaba como un recuadro que
+     prometia un significado que no tenia. */
+  color: var(--tx2);
+  background: var(--neutro-bg);
+  border: 1px solid var(--linea);
+  /* Un chip nunca se estira. Dentro de una fila flex con `align-items` por
+     defecto crecia hasta el alto del bloque de al lado, y en el panel de
+     alertas quedaba una pastilla vertical de cuatro renglones de alto con la
+     palabra «Alta» en el medio. */
+  align-self: center;
+  flex: none;
+}
+
+.chip.alto {
+  color: var(--alto-tx);
+  background: var(--alto-bg);
+  border-color: var(--alto-borde);
+}
+
+.chip.medio {
+  color: var(--medio-tx);
+  background: var(--medio-bg);
+  border-color: var(--medio-borde);
+}
+
+.chip.bajo {
+  color: var(--bajo-tx);
+  background: var(--bajo-bg);
+  border-color: var(--bajo-borde);
+}
+
+.chip.neutro {
+  color: var(--tx-neutro);
+  background: var(--neutro-bg);
+  border-color: var(--linea);
+}
+
+.chip.ia {
+  color: var(--ia-tx);
+  background: var(--ia-bg);
+  border-color: var(--ia-borde);
+}
+
+/* La heuristica de respaldo NO es IA y no lleva violeta: es lo que el sistema
+   hizo solo cuando el proveedor no contesto, y pide revision. */
+.chip.respaldo {
+  color: var(--resp-tx);
+  background: var(--resp-bg);
+  border-color: var(--resp-borde);
+  border-style: dashed;
+}
+
+/* ------------------------------------------------------------------ prioridad
+   Cuatro barras que crecen en alto y se llenan segun el nivel. El alto es el
+   canal que sobrevive a una captura en blanco y negro y a quien no distingue
+   el rojo del ambar. */
+
+.prioridad {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--txt-tabla);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prioridad-barras {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+  flex: none;
+}
+
+.prioridad-barras > span {
+  width: 3px;
+  border-radius: 1px;
+}
+
+/* ------------------------------------------------------ guia de reparacion
+   El riesgo de un paso no es un icono al final de la linea: es el fondo de la
+   tarjeta. Asi se ve antes de leer el texto, que es antes de empezar el paso. */
+
+.pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  counter-reset: paso;
+}
+
+.paso {
+  display: flex;
+  gap: var(--esp-3);
+  padding: var(--esp-3);
+  border-radius: var(--radio-campo);
+  background: var(--sup-2);
+  border: 1px solid var(--linea);
+}
+
+.paso.con-riesgo {
+  background: var(--medio-bg);
+  border-color: var(--medio-borde);
+}
+
+.paso-numero {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fuente-mono);
+  font-size: var(--txt-tabla);
+  font-weight: 600;
+  color: var(--tx2);
+  background: var(--sup);
+  border: 1px solid var(--linea-fuerte);
+}
+
+.paso-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.paso-titulo {
+  font-size: var(--txt-cuerpo);
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.paso-riesgo {
+  font-size: var(--txt-tabla);
+  color: var(--medio-tx);
+  line-height: var(--interlineado-parrafo);
+}
+
+/* ------------------------------------------------- modulo del solicitante
+   Piezas que no existen del lado del tecnico, porque resuelven otra cosa: ahi
+   se compara una lista de veinte para decidir cual atender, y aca se sigue un
+   pedido propio desde un telefono. */
+
+/* Elegir equipo con botones grandes y no con un desplegable: en un telefono un
+   `select` abre una rueda nativa donde el rotulo se lee cortado. */
+.opcion-grande {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--alto-tactil);
+  padding: var(--esp-3);
+  text-align: left;
+  font: inherit;
+  color: var(--tx);
+  background: var(--sup-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-campo);
+  cursor: pointer;
+}
+
+.opcion-grande:hover {
+  border-color: var(--linea-fuerte);
+}
+
+.opcion-grande.elegida {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.opcion-titulo {
+  font-size: var(--txt-cuerpo);
+  font-weight: 600;
+}
+
+/* La tarjeta de un pedido es un enlace entero, no un titulo con enlace: en un
+   telefono el area de toque tiene que ser toda la tarjeta. */
+.tarjeta.pedido {
+  display: block;
+  padding: var(--esp-4);
+  color: inherit;
+}
+
+.tarjeta.pedido:hover {
+  border-color: var(--linea-fuerte);
+  color: inherit;
+}
+
+.pedido-cabeza {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.pedido-titulo {
+  font-size: var(--txt-seccion);
+  font-weight: var(--peso-seccion);
+  color: var(--tx);
+}
+
+/* Cuatro tramos, los hechos con el color del estado. Es una barra y no un
+   numero porque «paso 3 de 4» obliga a leer, y la barra se ve. */
+.avance {
+  display: flex;
+  gap: 3px;
+  margin-top: var(--esp-3);
+}
+
+.avance-tramo {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--linea);
+}
+
+/* Novedades: una linea de tiempo simple, de lo mas nuevo a lo mas viejo. */
+.novedades {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.novedades li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: var(--esp-4);
+  border-left: 2px solid var(--linea-fuerte);
+}
+
+.novedad-texto {
+  font-size: var(--txt-cuerpo);
+  color: var(--tx);
+}
+
+/* --------------------------------------------------------------------- botones */
+
+.btn {
+  height: var(--alto-control);
+  padding: 0 14px;
+  border-radius: var(--radio-campo);
+  border: 1px solid var(--linea-fuerte);
+  background: var(--sup);
+  font-size: var(--txt-cuerpo);
+  font-weight: 500;
+  color: var(--tx);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--fondo);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.btn.pri {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--sobre-acento);
+}
+
+.btn.pri:hover:not(:disabled) {
+  background: var(--acento-hover);
+  border-color: var(--acento-hover);
+}
+
+.btn.plano {
+  border-color: transparent;
+  background: transparent;
+  color: var(--tx2);
+  font-weight: 400;
+}
+
+.avatar {
+  width: var(--alto-control);
+  height: var(--alto-control);
+  border-radius: 50%;
+  background: var(--acento);
+  color: var(--sobre-acento);
+  font-size: var(--txt-tabla);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin-left: 4px;
+}
+
+/* --------------------------------------------------------------------- campos */
+
+.filtros {
+  background: var(--sup);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.campo {
+  height: var(--alto-control);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-campo);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--sup);
+}
+
+.campo:focus-within {
+  border-color: var(--acento);
+}
+
+/* Un textarea con la clase `campo` heredaba el alto de un control de una
+   linea, asi que el tercer renglon quedaba cortado adentro de la caja. El alto
+   lo pone `rows`, que es lo que el que escribe la pantalla decide. */
+textarea.campo {
+  height: auto;
+  display: block;
+  padding: 8px 10px;
+  line-height: var(--interlineado-parrafo);
+  resize: vertical;
+}
+
+.campo input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  min-width: 0;
+}
+
+.campo input::placeholder {
+  color: var(--tx3);
+}
+
+.buscador {
+  flex: 1;
+  min-width: 220px;
+}
+
+select.campo {
+  min-width: 120px;
+  /* Antes usaba --tx-neutro, que es el color del texto DESACTIVADO: 2,6:1
+     sobre la tarjeta. El valor elegido de un desplegable es un dato como
+     cualquier otro y va en el color del texto. */
+  color: var(--tx);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23808faf' stroke-width='1.6'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  padding-right: 28px;
+}
+
+/* La lista desplegada la dibuja el sistema operativo y no hereda nada del
+   contenedor: sin esto, en el tema oscuro las opciones salian en el gris que
+   el navegador elige por su cuenta y no se leian. */
+select.campo option {
+  background: var(--sup);
+  color: var(--tx);
+}
+
+/* La opcion vacia -«Elegir el nuevo estado...»- si es un texto de ayuda y va
+   en el color de los rotulos. */
+select.campo option[value=''] {
+  color: var(--tx3);
+}
+
+.etiqueta {
+  display: block;
+  font-size: var(--txt-tabla);
+  font-weight: 500;
+  color: var(--tx2);
+  margin-bottom: 5px;
+}
+
+/* ---------------------------------------------------------------------- varios */
+
+.pie-tabla {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--linea-suave);
+  font-size: var(--txt-tabla);
+  color: var(--tx2);
+}
+
+.paginador {
+  display: flex;
+  gap: 6px;
+}
+
+.paginador button {
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--radio-chip);
+  border: 1px solid var(--linea);
+  background: var(--sup);
+  font-size: var(--txt-tabla);
+  color: var(--tx-neutro);
+  cursor: pointer;
+}
+
+.paginador button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.paginador button.actual {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--sobre-acento);
+  font-weight: 600;
+}
+
+.aviso {
+  border: 1px solid;
+  border-radius: var(--radio-tarjeta);
+  padding: 11px 14px;
+  font-size: var(--txt-cuerpo);
+  line-height: 1.45;
+}
+
+.aviso.error {
+  color: var(--alto-tx);
+  background: var(--alto-bg);
+  border-color: var(--alto-borde);
+}
+
+.aviso.atencion {
+  color: var(--medio-tx);
+  background: var(--medio-bg);
+  border-color: var(--medio-borde);
+}
+
+/* Informativo: no es un estado ni una accion, asi que no lleva color propio.
+   Antes usaba el violeta, que es el unico color reservado a la IA. */
+.aviso.info {
+  color: var(--tx2);
+  background: var(--sup-2);
+  border-color: var(--linea);
+}
+
+/* Lo que si viene del proveedor de IA. */
+.aviso.ia {
+  color: var(--ia-tx);
+  background: var(--ia-bg);
+  border-color: var(--ia-borde);
+}
+
+.vacio {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--tx3);
+  font-size: var(--txt-cuerpo);
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+}
+
+.dl dt {
+  padding: 9px 16px;
+  font-size: var(--txt-tabla);
+  color: var(--tx3);
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.dl dd {
+  margin: 0;
+  padding: 9px 16px;
+  font-size: var(--txt-tabla);
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.dl dt:last-of-type,
+.dl dd:last-of-type {
+  border-bottom: none;
+}
+
+/* ── esqueleto de carga y estado vacío ──────────────────────────────────────
+   El esqueleto ocupa el mismo alto que la tabla que viene, así la página no
+   salta cuando llegan los datos. El brillo que lo recorre es lo que lo separa
+   de una tabla real que se quedó sin contenido. */
+
+.esqueleto {
+  padding: var(--esp-3) 0;
+}
+
+.esqueleto-fila {
+  display: flex;
+  gap: var(--esp-6);
+  align-items: center;
+  height: var(--fila-alto);
+  padding: 0 var(--esp-4);
+  border-bottom: 1px solid var(--linea-suave);
+}
+
+.esqueleto-celda {
+  height: 9px;
+  border-radius: var(--radio-chico);
+  background: var(--neutro-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.esqueleto-celda::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--sup), transparent);
+  animation: esqueleto-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes esqueleto-brillo {
+  100% { transform: translateX(100%); }
+}
+
+/* Quien pidió menos movimiento no necesita ver el brillo para entender que
+   está cargando: alcanza con el bloque gris. */
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto-celda::after { animation: none; }
+}
+
+/* Y quien lo pidio en Apariencia sin haberlo pedido en el sistema operativo.
+   Son dos cosas distintas: alguien puede querer la interfaz quieta solo aca. */
+[data-movimiento='reducido'] .esqueleto-celda::after {
+  animation: none;
+}
+
+.sin-datos {
+  padding: var(--esp-12) var(--esp-4);
+  text-align: center;
+  color: var(--tx3);
+}
+
+.sin-datos-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--neutro-bg);
+  color: var(--tx3);
+  margin-bottom: var(--esp-4);
+}
+
+.sin-datos-titulo {
+  font-size: var(--txt-seccion);
+  font-weight: 600;
+  color: var(--tx2);
+  margin: 0 0 var(--esp-2);
+}
+
+.sin-datos-detalle {
+  font-size: var(--txt-tabla);
+  max-width: 48ch;
+  margin: 0 auto;
+  line-height: var(--interlineado-parrafo);
+}
+
+.sin-datos-accion {
+  margin-top: var(--esp-6);
+}
+
+/* Órbita · armazón */
+.app { background: var(--fondo); }
+/* El borde vuelve: la barra dejo de ser una losa oscura contra el lienzo y
+   ahora es la misma superficie que las tarjetas. En el tema claro, sin
+   borde, el limite entre la barra y el contenido no existia. */
+.sidebar { background: var(--nav-fondo); border-right: 1px solid var(--nav-linea); color: var(--nav-tx); }
+.sidebar .marca { padding: 26px 18px 20px; border-color: var(--nav-linea); }
+.sidebar .marca b { display:flex; align-items:center; gap:10px; font-size:22px; letter-spacing:-.8px; color:var(--nav-tx); }
+.sidebar .marca .marca-icono { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; margin:0; border-radius:9px; background:var(--acento); color:var(--sobre-acento); }
+.sidebar-organizacion { padding:14px 18px; background:var(--sup-2); border-top:1px solid var(--nav-linea); border-bottom:1px solid var(--nav-linea); }
+.org-nombre { font-size:11.5px; font-weight:700; color:var(--nav-tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.org-plan { display:flex; justify-content:space-between; gap:10px; margin-top:2px; font-size:var(--txt-micro); color:var(--tx3); }
+.org-plan .mono { color:var(--nav-acento); font-weight:700; }
+.sidebar nav { padding:18px 12px; gap:5px; overflow-y:auto; }
+.sidebar nav a { color:var(--nav-secundario); min-height:40px; height:auto; padding:10px 12px; font-size:12px; line-height:1.4; }
+.sidebar nav a:hover { color:var(--nav-tx); background:var(--nav-activo); text-decoration:none; }
+.sidebar nav a.activo { color:var(--nav-acento); background:var(--nav-activo); font-weight:700; }
+/* La insignia se empuja al borde en vez de ir pegada al rotulo: asi los
+   numeros quedan alineados entre si y se leen como una columna. */
+.insignia { margin-left:auto; font-family:var(--fuente-mono); font-size:10px; padding:1px 6px; border-radius:4px; background:var(--sup-2); color:var(--tx3); }
+.insignia.alto { background:var(--alto-bg); color:var(--alto-tx); }
+/* El parque que se paso de lo que el plan incluye. Es el unico numero de la
+   barra que cuesta plata, y por eso es el unico que cambia de color. */
+.org-plan .excede { color:var(--medio-tx); }
+
+/* Las pildoras de segmento del inventario. Ocupan el renglon entero debajo de
+   los desplegables: son atajos a lo que hay que mirar, no un filtro mas de la
+   fila, y si compitieran por el mismo espacio se leerian como uno mas. */
+.pildoras { display:flex; flex-wrap:wrap; gap:6px; flex-basis:100%; }
+.pildora { display:inline-flex; align-items:center; gap:7px; background:var(--sup-2); border:1px solid var(--linea); color:var(--tx2); font-family:inherit; font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:var(--radio-chico); cursor:pointer; }
+.pildora:hover { color:var(--tx); }
+/* El numero en monoespaciada: los cuatro quedan alineados entre si y se
+   comparan de un vistazo, que es para lo que estan. */
+.pildora .mono { font-size:10.5px; color:var(--tx3); }
+.pildora.activa { border-color:var(--acento); background:var(--acento-suave); color:var(--acento-tx); font-weight:700; }
+.pildora.activa .mono { color:var(--acento-tx); }
+/* El tono solo cuando el segmento tiene algo adentro: «riesgo alto 0» no es
+   una alarma, es una buena noticia. */
+.pildora.alto .mono { color:var(--alto-tx); }
+.pildora.medio .mono { color:var(--medio-tx); }
+
+/* El tablero de incidencias. Las columnas no se reparten el ancho en partes
+   iguales: cada una mide lo suyo y el tablero scrollea en horizontal. Con
+   `1fr` por columna, agregar un estado angosta a todas y las tarjetas se
+   parten en cinco renglones. */
+.tablero { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(230px,1fr); gap:14px; align-items:start; overflow-x:auto; padding-bottom:6px; }
+.tablero-columna { background:var(--sup-2); border:1px solid var(--linea); border-radius:var(--radio-tarjeta); padding:12px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+.tablero-columna > header { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); }
+.tablero-columna > header .mono { font-size:11px; color:var(--tx3); }
+.tablero-vacia { margin:0; padding:14px 0; text-align:center; font-size:11px; color:var(--tx3); }
+/* La tarjeta es un enlace entero y no un titulo con enlace: el area de clic es
+   la tarjeta, y de paso queda accesible por teclado sin agregar nada. */
+.tablero-tarjeta { display:flex; flex-direction:column; gap:6px; background:var(--sup); border:1px solid var(--linea); border-radius:var(--radio-campo); padding:11px; box-shadow:var(--elev-tarjeta); color:inherit; }
+.tablero-tarjeta:hover { border-color:var(--linea-fuerte); text-decoration:none; }
+.tablero-tarjeta-cabeza { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.tablero-tarjeta .mono { color:var(--acento-tx); font-weight:700; font-size:11.5px; }
+.tablero-titulo { font-size:12px; font-weight:600; color:var(--tx); line-height:1.45; }
+.tablero-tarjeta .sub { font-size:11px; }
+@media(max-width:768px){.tablero{grid-auto-columns:minmax(210px,85vw)}}
+.sidebar :focus-visible { outline-color:var(--nav-acento); }
+.sidebar .pie { padding:14px 18px; border-color:var(--nav-linea); color:var(--nav-secundario); font-size:11px; }
+.pie-identidad { display:flex; align-items:center; gap:10px; }
+.pie-datos { min-width:0; }
+.pie-datos > div { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidebar .pie .avatar { width:30px; height:30px; margin:0; background:var(--sup-2); color:var(--nav-tx); border:1px solid var(--nav-linea); font-size:11px; font-weight:700; }
+.perfil-nombre { color:var(--nav-tx); font-weight:600; }
+.sidebar .pie .btn { color:var(--nav-secundario); }
+.sidebar .pie .btn:hover { color:var(--nav-tx); background:var(--nav-activo); }
+.encabezado { padding:24px 28px 20px; background:var(--fondo); border:0; align-items:center; gap:18px; }
+.encabezado h1 { font-weight:650; letter-spacing:-1px; line-height:1.18; }
+.encabezado-migas { font-family:var(--fuente-mono); color:var(--tx3); font-size:11px; margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+.encabezado .contexto { line-height:1.7; margin-top:6px; }
+.encabezado .acciones { flex-wrap:wrap; justify-content:flex-end; }
+.encabezado .avatar { background:var(--sup-2); color:var(--tx); border:1px solid var(--linea); }
+.cuerpo { padding:8px 28px 28px; gap:var(--esp-seccion); min-width:0; }
+.principal { min-height:0; }
+
+/* Órbita · piezas compartidas */
+.tarjeta { box-shadow:var(--elev-tarjeta); min-width:0; overflow-x:auto; }
+.tarjeta > header { padding:16px 18px; gap:12px; border-bottom-color:var(--linea); }
+.tarjeta > header h2 { letter-spacing:-.2px; }
+.tarjeta > header .nota { font-size:11px; }
+thead { background:var(--sup-2); }
+thead th { padding-top:10px; padding-bottom:10px; }
+tbody td { padding-top:var(--esp-tabla); padding-bottom:var(--esp-tabla); line-height:1.6; }
+.mono { font-family:var(--fuente-mono); }
+/* El codigo de un equipo o el numero de una incidencia son el identificador de
+   la fila: el prototipo los pone en negrita y en el color del acento, y asi la
+   vista salta de identificador en identificador sin leer el resto. */
+td .mono, td.mono { font-weight:600; }
+a.mono { color:var(--acento-tx); font-weight:700; }
+.btn { min-height:var(--alto-control); transition:background .15s,border-color .15s; font-weight:550; }
+.btn.pri { box-shadow:0 3px 8px rgba(18,43,72,.12); }
+.btn:hover { text-decoration:none; }
+.btn.plano { color:var(--acento-tx); }
+/* El campo se hunde un tono respecto de la tarjeta que lo contiene. Con el
+   mismo fondo que la tarjeta, un campo vacio es un rectangulo con borde y hay
+   que mirarlo dos veces para saber si se puede escribir ahi. */
+.campo { min-width:0; background:var(--sup-2); }
+.campo:focus-within { outline:2px solid var(--acento-tx); outline-offset:2px; }
+.filtros { padding:12px 20px; box-shadow:var(--elev-tarjeta); gap:12px; }
+
+/* El buscador y la tabla que filtra son un solo objeto y no dos tarjetas
+   apiladas: la barra se pega a la tabla y pierde el borde de abajo, igual que
+   en el prototipo. Un filtro flotando aparte se lee como un panel mas, y lo
+   que hace es gobernar lo de abajo.
+
+   Va con `:has` porque la fusion depende de que efectivamente venga una tabla:
+   en Reportes el filtro precede a una grilla de tarjetas, y ahi el borde plano
+   colgando en el aire quedaria roto. Donde `:has` no exista, se ven las dos
+   tarjetas separadas, que es como se veia hasta ahora. */
+.cuerpo > .filtros:has(+ .tarjeta) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: 0;
+  box-shadow: none;
+  /* Se come el hueco que el `gap` de la columna pone entre los dos. */
+  margin-bottom: calc(-1 * var(--esp-seccion));
+}
+
+.cuerpo > .filtros + .tarjeta {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.etiqueta { font-size:12px; margin-bottom:7px; }
+.chip { font-weight:550; font-size:11px; padding:4px 9px; border-radius:20px; line-height:1.4; }
+.chip.neutro { color:var(--tx2); }
+.paginador button { border-color:var(--linea-fuerte); color:var(--tx2); min-width:32px; min-height:32px; }
+.aviso { border-radius:var(--radio-campo); padding:14px 16px; line-height:1.7; }
+.aviso.error,.aviso.atencion { border-left:3px solid currentColor; }
+.vacio,.sin-datos { padding:44px 22px; line-height:1.8; }
+.sin-datos-marca { width:58px; height:58px; border-radius:16px; border:1px solid var(--linea); }
+.esqueleto { background:var(--sup); }
+.esqueleto-celda { background:var(--linea); }
+.dl { margin:0; grid-template-columns:minmax(105px,.8fr) minmax(0,1.2fr); }
+.dl dt,.dl dd { padding:12px 16px; overflow-wrap:anywhere; }
+.indicadores { gap:14px; margin-bottom:0; }
+.indicador { padding:17px 19px; }
+.indicador-cabecera { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.indicador-cabecera h2 { font-size:11px; color:var(--tx3); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+.indicador-icono { display:flex; align-items:center; justify-content:center; color:var(--tx3); flex:none; }
+.indicador-valor { font-family:var(--fuente-mono); font-size:var(--txt-cifra); font-weight:var(--peso-cifra); letter-spacing:-1.6px; line-height:1.1; margin:8px 0 4px; }
+.indicador-detalle { color:var(--tx2); font-size:11.5px; line-height:1.6; }
+/* El tono lo lleva la cifra y un punto al lado del rotulo, no una barra en el
+   borde. La barra de color a un lado de la tarjeta es el tell mas reconocible
+   de una interfaz generada por IA -lo marca el detector de impeccable- y aca
+   no aportaba nada que la cifra teniida no dijera ya: el numero es lo que se
+   mira, y estaba pintado del mismo color que la barra. */
+.indicador-cabecera h2::before { content:''; display:none; width:6px; height:6px; margin-right:7px; border-radius:50%; vertical-align:middle; }
+.indicador-alto .indicador-cabecera h2::before,
+.indicador-medio .indicador-cabecera h2::before,
+.indicador-bajo .indicador-cabecera h2::before { display:inline-block; }
+.indicador-alto .indicador-cabecera h2::before { background:var(--alto-barra); }
+.indicador-alto .indicador-valor { color:var(--alto-tx); }
+.indicador-medio .indicador-cabecera h2::before { background:var(--medio-barra); }
+.indicador-medio .indicador-valor { color:var(--medio-tx); }
+.indicador-bajo .indicador-cabecera h2::before { background:var(--bajo-barra); }
+.indicador-bajo .indicador-valor { color:var(--bajo-tx); }
+.nivel-riesgo { padding:4px 0; }
+.nivel-riesgo .mono { font-weight:650; }
+@media(prefers-reduced-motion:reduce){.btn{transition:none}}
+[data-movimiento='reducido'] .btn {transition:none}
+
+/* Órbita · inventario, riesgo e incidencias */
+.dashboard-detalles { grid-template-columns:minmax(0,1.9fr) minmax(290px,1fr); }
+.senal-predictiva { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); background:var(--sup); border:1px solid var(--linea); border-radius:var(--radio-tarjeta); flex:none; overflow:hidden; }
+.senal-destacada { display:flex; align-items:center; gap:22px; padding:22px; }
+.senal-anillo { width:112px; height:112px; flex:none; border-radius:50%; padding:5px; background:conic-gradient(var(--riesgo-color) var(--score),var(--sup-2) 0); }
+.senal-anillo > div { width:100%; height:100%; background:var(--sup); border:5px solid var(--sup); border-radius:50%; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.senal-anillo strong { color:var(--riesgo-color); font-size:36px; line-height:1.2; letter-spacing:-1px; }
+.senal-anillo small { color:var(--tx2); font-size:11px; }
+.senal-contexto { min-width:0; }
+.senal-contexto h2 { font-family:var(--fuente-mono); font-size:20px; letter-spacing:-.5px; margin:5px 0; }
+.senal-contexto p { font-size:12px; color:var(--tx2); margin:5px 0; line-height:1.7; }
+.senal-enlace { display:inline-block; font-size:12px; margin-left:14px; font-weight:600; }
+.senal-ranking { background:var(--sup-2); padding:20px; border-left:1px solid var(--linea); }
+.senal-ranking-titulo { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.senal-ranking h3 { font-size:12px; font-weight:550; }
+.senal-barras { display:flex; gap:9px; margin-top:14px; }
+.senal-columna { flex:1; min-width:0; display:flex; flex-direction:column; text-align:center; align-items:center; gap:6px; }
+.senal-columna > .mono { color:var(--riesgo-color); font-size:11px; }
+.senal-columna-pista { width:100%; height:65px; display:flex; align-items:flex-end; justify-content:center; }
+.senal-columna-pista i { display:block; width:60%; min-height:0; border-radius:3px 3px 0 0; background:var(--riesgo-color); }
+.senal-columna > a,.senal-columna > span:last-child { font-size:9px; overflow-wrap:anywhere; line-height:1.4; }
+.alerta-reciente { padding:16px 18px; border-bottom:1px solid var(--linea); }
+.alerta-reciente:last-child { border-bottom:0; }
+.alerta-reciente > div:first-child { flex-wrap:wrap; }
+.alerta-reciente .sub { font-size:12px; line-height:1.7; }
+.pagina-incidencia .dos-columnas { grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr); }
+.pagina-incidencia p { font-size:var(--txt-cuerpo); line-height:1.8; }
+.pagina-incidencia .paso { background:var(--sup); padding:14px; }
+.pagina-incidencia .paso.con-riesgo { background:var(--medio-bg); }
+.pagina-alta { max-width:1100px; width:100%; }
+.pagina-activos table,.pagina-incidencias table { min-width:800px; }
+.pagina-equipo .tarjeta > header h2 { line-height:1.6; }
+
+/* El desglose del motor predictivo: una tarjeta por regla, todas a la vista.
+   `auto-fit` y no cinco columnas fijas porque la cantidad de reglas la decide
+   la organizacion en Configuracion, no el diseno. */
+.desglose { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr)); gap:12px; }
+.aporte { padding:12px; background:var(--sup-2); border-radius:var(--radio-chip); border:1px solid var(--linea); }
+.aporte-regla { font-size:var(--txt-micro); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--tx3); }
+.aporte-puntos { font-size:18px; font-weight:800; margin:4px 0; }
+/* El techo va mas chico y en gris: lo que se compara de un vistazo entre las
+   cinco tarjetas es cuanto aporto cada una, no cuanto podia aportar. */
+.aporte-puntos span { font-size:11px; font-weight:400; color:var(--tx3); }
+.aporte-motivo { font-size:11px; color:var(--tx2); line-height:1.6; }
+/* La regla que llego a su techo se distingue por el borde entero y por la
+   cifra, no por una barra a la izquierda. */
+.aporte-alto { border-color:var(--alto-borde); }
+.aporte-alto .aporte-puntos { color:var(--alto-tx); }
+.aporte-medio { border-color:var(--medio-borde); }
+.aporte-medio .aporte-puntos { color:var(--medio-tx); }
+@media(max-width:1280px){.dashboard-detalles{grid-template-columns:1fr}.senal-predictiva{grid-template-columns:1fr 1fr}.senal-destacada{gap:15px;padding:18px}.senal-anillo{width:90px;height:90px}.senal-contexto h2{font-size:18px}}
+@media(max-width:1180px){.pagina-incidencia .dos-columnas{grid-template-columns:1fr}}
+@media(max-width:650px){.senal-predictiva{grid-template-columns:1fr}.senal-ranking{border-left:0;border-top:1px solid var(--linea)}.senal-destacada{padding:20px}.senal-columna>a{font-size:9px}.senal-barras{gap:6px}.pagina-dashboard .indicadores{grid-template-columns:1fr 1fr}.indicador{padding:14px}.indicador-cabecera h2{font-size:10px}.indicador-valor{font-size:32px}.indicador-detalle{font-size:10px}.pagina-incidencia .dos-columnas>div{min-width:0}}
+
+/* Órbita · operación y administración */
+.pagina-agenda table,.pagina-mantenimientos table,.pagina-historial table { min-width:780px; }
+.pagina-agenda form.tarjeta,.pagina-mantenimientos form.tarjeta { border-color:var(--linea-fuerte); }
+.pagina-agenda .chip.alto { border-color:var(--alto-tx); }
+.pagina-analisis .dos-columnas { grid-template-columns:minmax(0,1.55fr) minmax(310px,1fr); }
+.pagina-analisis .tarjeta { line-height:1.6; }
+.pagina-historial tbody td:nth-child(4) { color:var(--tx); line-height:1.75; }
+.reportes-grilla { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:18px; }
+.reporte-opcion { display:flex; flex-direction:column; }
+.reporte-opcion > header { justify-content:flex-start; gap:12px; padding:21px 18px; }
+.reporte-icono { background:var(--sup-2); color:var(--tx2); padding:10px; border-radius:10px; display:flex; }
+.reporte-opcion > div { flex:1; line-height:1.8; }
+.reporte-opcion .btn { margin-top:auto; align-self:flex-start; }
+.pagina-usuarios table { min-width:790px; }
+.pagina-usuarios .dos-columnas > div { min-width:0; }
+.tabla-desplazable { overflow-x:auto; }
+@media(max-width:1180px){.pagina-analisis .dos-columnas {grid-template-columns:1fr}}

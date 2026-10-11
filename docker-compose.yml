@@ -1,0 +1,160 @@
+# PredictIT — el sistema completo.
+#
+#   docker compose up --build
+#
+# Levanta base, esquema con datos de demostración, API y frontend. En una máquina
+# que sólo tenga Docker: no hace falta .NET ni Node.
+#
+#   Aplicación   http://localhost:8080
+#   API          http://localhost:8081/swagger
+#
+# Para desarrollar con recarga en caliente sigue estando `arrancar.ps1`, que corre
+# la API y Vite en el host contra la base del contenedor. Esto es para levantarlo,
+# probarlo y demostrarlo.
+
+services:
+  # ------------------------------------------------------------------ la base
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: predictit-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?falta MSSQL_SA_PASSWORD: copiá .env.ejemplo a .env}"
+      MSSQL_PID: Developer
+      # La misma zona que la API, y por la misma razón. Trece columnas del
+      # esquema se sellan con `DEFAULT SYSDATETIME()`, o sea con el reloj del
+      # motor, y el resto con `DateTime.Now`, o sea con el de la aplicación. Con
+      # la API en hora argentina y el motor en UTC, una incidencia registrada y
+      # asignada en el mismo segundo quedaba con tres horas de diferencia entre
+      # las dos marcas: la pantalla del solicitante mostraba «recibimos tu
+      # pedido 15:56» y «se lo asignamos 18:56».
+      TZ: "${TZ:-America/Argentina/Buenos_Aires}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - predictit-data:/var/opt/mssql
+      # Los backups del sistema (RespaldoService) se escriben acá adentro del
+      # contenedor y quedan visibles en el host para poder mostrarlos.
+      - ./backups:/var/opt/mssql/backups
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  # -------------------------------------------------------- esquema y datos
+  # Corre una vez y termina. Los scripts son idempotentes —MERGE e
+  # IF NOT EXISTS—, así que volver a levantar el stack no rompe ni duplica
+  # nada: reaplica y sale.
+  migraciones:
+    # La imagen del propio SQL Server, que ya trae sqlcmd 18. No se usa
+    # mssql-tools18 porque ese repositorio no existe en MCR, y la de tools 17
+    # no soporta el flag -C. De paso no agrega ninguna descarga.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: predictit-migraciones
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./db:/db:ro
+    environment:
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?falta MSSQL_SA_PASSWORD: copiá .env.ejemplo a .env}"
+      # La contraseña del usuario con el que se conecta la aplicación. La crea
+      # el script 06 y la usa la API: nunca es la de sa.
+      PREDICTIT_DB_PASSWORD: "${PREDICTIT_DB_PASSWORD:?falta PREDICTIT_DB_PASSWORD: copiá .env.ejemplo a .env}"
+    # Los flags no son decorativos:
+    #   -b        corta con exit != 0 ante el primer error, para que un script
+    #             roto no deje la base a medio aplicar sin que nadie se entere.
+    #   -I        QUOTED_IDENTIFIER ON. sqlcmd lo deja en OFF y así fallan los
+    #             índices filtrados (WHERE ... IS NOT NULL).
+    #   -f 65001  los scripts tienen acentos y están en UTF-8.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        for s in 01-negocio-schema 02-servicio-schema 03-seed-servicio 04-seed-negocio 05-seed-traducciones; do
+          echo "-> $$s.sql"
+          /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -I -f 65001 -i "/db/$$s.sql"
+        done
+        # Va último y aparte: crea el usuario de la aplicación, que necesita que
+        # las dos bases ya existan.
+        echo "-> 06-usuario-de-aplicacion.sql"
+        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -I -f 65001 -v APP_PASSWORD="$$PREDICTIT_DB_PASSWORD" -i /db/06-usuario-de-aplicacion.sql
+        echo "Bases aplicadas correctamente."
+    restart: "no"
+
+  # ------------------------------------------------------------------- la API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: predictit-api
+    depends_on:
+      migraciones:
+        # Espera a que las migraciones terminen bien. Sin esto la API arranca
+        # contra una base sin tablas, y el primer login falla con un error que
+        # no dice cuál es el problema real.
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Sin esto el contenedor corre en UTC y `DateTime.Now` devuelve UTC. No es
+      # cosmetico: el sistema mide un SLA de 4 horas sobre las incidencias y
+      # sella la bitacora con la hora de la aplicacion. Tres horas de corrimiento
+      # cambian si una incidencia esta en termino o vencida.
+      TZ: "${TZ:-America/Argentina/Buenos_Aires}"
+      # La API entra como `predictit_app`, que sólo existe adentro de las dos
+      # bases del sistema. Entrar como sa hacía que una cadena de conexión
+      # filtrada valiera el motor entero (OWASP A05).
+      ConnectionStrings__Negocio: "Server=sqlserver,1433;Database=PredictIT_Negocio;User Id=predictit_app;Password=${PREDICTIT_DB_PASSWORD:?falta PREDICTIT_DB_PASSWORD};TrustServerCertificate=True;Encrypt=True;"
+      ConnectionStrings__Servicio: "Server=sqlserver,1433;Database=PredictIT_Servicio;User Id=predictit_app;Password=${PREDICTIT_DB_PASSWORD:?falta PREDICTIT_DB_PASSWORD};TrustServerCertificate=True;Encrypt=True;"
+      # Las dos claves salen del .env y no de la imagen: una imagen con
+      # credenciales adentro las lleva a donde vaya la imagen.
+      Jwt__Clave: "${PREDICTIT_JWT_CLAVE:?falta PREDICTIT_JWT_CLAVE: copiá .env.ejemplo a .env}"
+      Cifrado__Clave: "${PREDICTIT_CLAVE_CIFRADO:?falta PREDICTIT_CLAVE_CIFRADO: copiá .env.ejemplo a .env}"
+      # El navegador habla con nginx y no con la API, así que el origen que
+      # importa es el del frontend.
+      Cors__Origenes__0: "http://localhost:8080"
+      Respaldos__RutaContenedor: "/var/opt/mssql/backups"
+      # Corre como Production, que es lo correcto para un contenedor, y aun asi
+      # expone Swagger: declararlo Development para conseguirlo cambiaria tambien
+      # el manejo de errores y las paginas de excepcion.
+      Swagger__Habilitado: "true"
+      # Metricas en formato Prometheus (ADR 0015). Vacio por omision: sin token
+      # el endpoint no existe, que es lo que corresponde para algo que dice que
+      # rutas hay y cuanto tarda cada una.
+      Metricas__Token: "${PREDICTIT_METRICAS_TOKEN:-}"
+      Prediccion__HorasEntreBarridos: "${PREDICTIT_HORAS_BARRIDO:-24}"
+      Prediccion__MinutosAntesDelPrimero: "${PREDICTIT_MINUTOS_BARRIDO:-2}"
+      # Con 1 el proveedor simulado falla siempre: es la demostración del CP-14.
+      PREDICTIT_IA_FALLAR_CADA: "${PREDICTIT_IA_FALLAR_CADA:-0}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    ports:
+      # Expuesta sólo para poder abrir Swagger. La aplicación no la usa: pasa por
+      # el proxy de nginx.
+      - "8081:8080"
+    healthcheck:
+      # /api/salud es anonimo y no toca la base: responde si el proceso vive.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/salud || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # -------------------------------------------------------------- el frontend
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: predictit-web
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  predictit-data:

@@ -1,0 +1,318 @@
+/* ============================================================================
+   PredictIT · adaptacion a pantallas chicas
+
+   Va ultimo en `main.tsx`, despues de `app.css` y `temas.css`, porque lo unico
+   que hace es sobrescribir. Para volver al layout fijo alcanza con comentar ese
+   import: no toca ningun componente, ningun nombre de campo y ninguna llamada
+   a la API.
+
+   Los cortes son los de la direccion:
+
+     1366   la medida de referencia. Arriba de 1180 no cambia nada.
+     1180   las pantallas de detalle pasan a una columna. Es donde deja de
+            entrar la barra lateral (232) mas el contenido mas el panel
+            lateral (380) sin apretar la tabla.
+     1024   la barra lateral se reduce a un riel de iconos. En una tablet
+            horizontal esos 232 px eran una quinta parte del ancho util
+            gastada en rotulos que la persona ya conoce.
+      768   el riel pasa a barra horizontal arriba. Debajo de este ancho una
+            columna lateral deja menos de 600 px de contenido, que no alcanza
+            para una tabla.
+      480   el telefono. Es el ancho real del modulo del solicitante: alguien
+            parado al lado de una maquina que no arranca. Ahi los controles
+            pasan al piso tactil de 48 px.
+
+   Lo que NO se hace: colapsar las tablas a tarjetas. Una tabla de incidencias
+   es una lista que se compara de arriba hacia abajo, y en tarjetas se pierde
+   justamente la comparacion. Scrollean en horizontal dentro de su tarjeta.
+   ========================================================================= */
+
+/* --------------------------------------------- 1600 y 1920 · pantalla grande
+
+   La direccion se dibujo sobre un notebook de 1366 y la escala quedo fija ahi.
+   En un monitor de 1920 el resultado es correcto y chico: la misma tabla de 13
+   px ocupa dos tercios del ancho y sobra pantalla abajo, asi que se lee peor
+   que en el notebook para el que se diseño.
+
+   Lo que crece es la escala, no el layout: el ancho de la barra lateral, el
+   alto de fila y los tamanios de texto. Las proporciones entre ellos son las
+   mismas, asi que la jerarquia visual no cambia -no es un zoom del navegador,
+   que agranda tambien los bordes y las sombras y engorda todo-.
+
+   Los contrastes no se tocan y siguen pasando: `docs/design/_contraste.py` mide
+   colores, y estos cortes solo cambian medidas. */
+
+@media (min-width: 1600px) {
+  :root {
+    --txt-cifra: 46px;
+    --txt-titulo: 25px;
+    --txt-seccion: 16px;
+    --txt-cuerpo: 14.5px;
+    --txt-tabla: 14px;
+    --txt-micro: 11px;
+
+    --ancho-sidebar: 252px;
+    --ancho-confignav: 214px;
+    --alto-control: 40px;
+  }
+
+  [data-densidad='compacta'] { --fila-alto: 38px; }
+  [data-densidad='normal']   { --fila-alto: 52px; }
+  [data-densidad='amplia']   { --fila-alto: 64px; }
+
+  .cuerpo,
+  .encabezado {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --txt-cifra: 52px;
+    --txt-titulo: 28px;
+    --txt-seccion: 17px;
+    --txt-cuerpo: 15.5px;
+    --txt-tabla: 15px;
+    --txt-micro: 11.5px;
+
+    --ancho-sidebar: 268px;
+    --alto-control: 42px;
+  }
+
+  [data-densidad='compacta'] { --fila-alto: 42px; }
+  [data-densidad='normal']   { --fila-alto: 56px; }
+  [data-densidad='amplia']   { --fila-alto: 70px; }
+
+  /* El panel de contexto tambien crece: dejarlo en 380 px mientras el
+     contenido se estira hace que la justificacion de la IA quede en una
+     columna angosta al lado de una tabla holgada. */
+  :root {
+    --ancho-panel: 460px;
+  }
+}
+
+/* ------------------------------------------------------ 1180 · una columna */
+
+@media (max-width: 1180px) {
+  /* El panel lateral pasa abajo, no se achica: a 380 px ya estaba en su
+     minimo, y mas angosto la justificacion de la IA se parte en seis
+     renglones. */
+  .dos-columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Las tarjetas de indicador dejan de repartirse el ancho en partes iguales
+     y se acomodan de a dos o de a tres segun entren. */
+  .indicadores {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+}
+
+/* --------------------------------------------------------- 1024 · el riel */
+
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 56px;
+  }
+
+  .sidebar .marca {
+    padding: 16px 0 12px;
+    text-align: center;
+  }
+
+  /* La tarjeta de la organizacion no entra en 56 px y no hay forma de
+     abreviarla que siga sirviendo: un nombre recortado a tres letras no
+     identifica a nadie. Sale entera y vuelve cuando hay ancho. */
+  .sidebar-organizacion,
+  .sidebar nav a span,
+  .sidebar .pie > div {
+    display: none;
+  }
+
+  /* El rotulo no desaparece: pasa al `title`, que el navegador muestra al
+     apoyar el puntero, y sigue estando para un lector de pantalla. */
+  .sidebar nav {
+    padding: 12px 8px;
+  }
+
+  .sidebar nav a {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar .pie {
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  /* «Cerrar sesion» no entra en 56 px en una linea y se desbordaba sobre el
+     contenido. Se parte en dos y baja de tamanio; achicarla no es un problema
+     de contraste porque el boton plano ya usa el color del acento. */
+  .sidebar .pie .btn {
+    font-size: var(--txt-micro);
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  /* La tabla ancha scrollea adentro de su tarjeta en vez de recortarse. El
+     `overflow: hidden` de la tarjeta existe para recortar las esquinas
+     redondeadas, y por eso hay que pisarlo con la misma especificidad. */
+  .tarjeta {
+    overflow-x: auto;
+  }
+
+  .cuerpo,
+  .encabezado {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Del logotipo queda la inicial, y solo en el riel vertical: entre 769 y 1024
+   la barra mide 56 px y «PredictIT» no entra. Debajo de 768 la barra es
+   horizontal y el nombre completo vuelve. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar .marca b {
+    /* El texto se apaga por tamanio y no con `display: none` para que el
+       lector de pantalla lo siga encontrando. */
+    font-size: 0;
+  }
+
+  .sidebar .marca b::after {
+    content: 'P';
+    font-size: var(--txt-titulo);
+    color: var(--acento-tx);
+  }
+}
+
+/* --------------------------------------- 768 · la barra lateral va arriba */
+
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    border-right: none;
+    border-bottom: 1px solid var(--linea);
+    padding: 0 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .sidebar .marca {
+    border-bottom: none;
+    padding: 10px 0;
+    flex: none;
+  }
+
+  .sidebar nav {
+    flex-direction: row;
+    padding: 0;
+    /* Con muchos items la barra scrollea en horizontal en vez de partirse en
+       dos renglones: dos renglones de navegacion arriba de todo se comen la
+       pantalla que hace falta para el contenido. */
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar nav a {
+    flex: none;
+    width: var(--alto-tactil);
+    height: var(--alto-tactil);
+  }
+
+  .sidebar .pie {
+    margin-top: 0;
+    border-top: none;
+    padding: 0;
+    flex: none;
+  }
+
+  /* El area de contenido deja de ser la que scrollea: scrollea la pagina
+     entera, que es lo que espera cualquiera en un telefono. */
+  .principal,
+  .cuerpo {
+    overflow: visible;
+  }
+
+  html,
+  body,
+  #raiz {
+    height: auto;
+    min-height: 100%;
+  }
+
+  /* El encabezado apila titulo y acciones: en una sola linea el boton
+     primario terminaba de 40 px de ancho con el rotulo cortado. */
+  .encabezado {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .encabezado .acciones {
+    flex-wrap: wrap;
+  }
+
+  /* La barra de filtros deja de ser una fila unica. */
+  .filtros {
+    flex-wrap: wrap;
+  }
+
+  .filtros > * {
+    flex: 1 1 160px;
+  }
+}
+
+/* ------------------------------------------------------------ 480 · el telefono */
+
+@media (max-width: 480px) {
+  /* Piso tactil. No es cosmetico: un boton de 36 px se falla con el pulgar, y
+     el modulo del solicitante se usa parado al lado de la maquina rota. */
+  :root {
+    --alto-control: var(--alto-tactil);
+  }
+
+  .btn {
+    min-height: var(--alto-tactil);
+  }
+
+  .cuerpo,
+  .encabezado {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .encabezado h1 {
+    font-size: var(--txt-seccion);
+  }
+
+  /* Las acciones del encabezado ocupan el ancho completo y se apilan: en un
+     telefono dos botones al lado quedan de 150 px cada uno. */
+  .encabezado .acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Solo los botones se estiran. El avatar es un circulo y con `> *` quedaba
+     de ancho completo. */
+  .encabezado .acciones > .btn {
+    justify-content: center;
+  }
+}
+
+/* Órbita: el riel conserva el símbolo y la navegación táctil. */
+@media (min-width:1600px){:root {--txt-titulo:32px;}}
+@media (min-width:1920px){:root {--txt-titulo:34px;}}
+@media (min-width:769px) and (max-width:1024px){.sidebar .marca b{font-size:0;justify-content:center;gap:0}.sidebar .marca b::after{content:none}.sidebar .marca .marca-icono{display:inline-flex}.sidebar nav a{padding:10px 0}.sidebar .pie .btn{font-size:11px}}
+@media(max-width:768px){.sidebar .marca b{font-size:16px;gap:7px}.sidebar .marca .marca-icono{display:none}.sidebar nav{padding:0;overflow-y:hidden}.sidebar nav a{padding:0;min-height:48px}.sidebar .pie{padding:0}.sidebar .pie .btn{font-size:10px}.encabezado .acciones{justify-content:flex-start}.encabezado{padding-top:20px}.cuerpo{min-width:0}.encabezado h1{font-size:26px}.encabezado-migas{font-size:10px}}

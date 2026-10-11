@@ -1,0 +1,6 @@
+@PredictIT.Api_HostAddress = http://localhost:5052
+
+GET {{PredictIT.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

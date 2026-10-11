@@ -1,0 +1,28 @@
+/*
+  Lo que los temas necesitan y no se puede escribir como variable.
+
+  Los colores no estan aca: viven en `tokens.css`, con la lista completa por
+  tema. Este archivo queda con las correcciones que no son de color y que por
+  eso no pueden viajar en un token.
+
+  La primera: los navegadores dibujan los controles de formulario con el
+  esquema del sistema operativo. Sin `color-scheme: dark`, un desplegable
+  abierto sale con fondo blanco en medio de una interfaz oscura.
+
+  La segunda: una sombra negra no se ve sobre un fondo oscuro. En el tema
+  oscuro la tarjeta se separa del fondo con su borde, y la sombra se saca para
+  que no quede un halo sucio en el borde inferior. La sombra queda reservada
+  para lo que flota y se va a cerrar, que es lo que dice `--elev-flotante`.
+*/
+
+[data-tema='oscuro'] {
+  color-scheme: dark;
+}
+
+[data-tema='claro'] {
+  color-scheme: light;
+}
+
+[data-tema='oscuro'] .tarjeta {
+  box-shadow: none;
+}

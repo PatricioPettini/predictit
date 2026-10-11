@@ -1,0 +1,52 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Entorno y secretos
+.env
+.env.local
+# Las credenciales del despliegue en Fly. Se importan a `fly secrets` y ahi
+# viven cifradas; el archivo queda en la maquina para poder reimportarlas.
+.env.fly
+appsettings.Development.json
+appsettings.Local.json
+
+# Backups generados por el sistema
+backups/
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+
+# Cache de Python
+__pycache__/
+*.pyc
+
+# ENTREGABLES/ NO se ignora a proposito: se genera con _armar-entregables.py,
+# pero se versiona para que quien clone el repositorio la encuentre armada sin
+# tener que correr los generadores ni levantar la base.
+
+# Archivos de bloqueo que dejan Word y Excel mientras tienen algo abierto.
+~$*
+
+# Archivo de bloqueo que deja Enterprise Architect con el modelo abierto.
+*.ldb
+
+# El destino del proxy del servidor de desarrollo, cuando la API corre en el
+# contenedor (8081) en vez de con `dotnet run` (5099).
+frontend/.env.local
+
+# Las exportaciones del canvas de diseno. Su contenido ya vive descomprimido en
+# frontend/canvas y frontend/canvas2; versionadas ademas como .zip quedaban
+# viejas y, con ese nombre, cualquiera que entra al repositorio buscando el
+# frontend se baja artboards de septiembre en vez del codigo.
+frontend/*.zip

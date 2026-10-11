@@ -1,0 +1,26 @@
+# Todo lo que no tiene por que entrar al contexto de build.
+#
+# Los patrones de .dockerignore **no son recursivos**: `obj/` matchea solo
+# ./obj y deja pasar PredictIT.Api/obj. Hace falta `**/obj/`.
+#
+# No es un detalle: sin esto, el project.assets.json del host entra a la imagen
+# y `dotnet publish --no-restore` intenta resolver las versiones que resolvio el
+# SDK del host. Falla con "Package ... was not found", que apunta a NuGet y no
+# al verdadero problema.
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+
+# Configuracion local: tiene la clave de firma y la de cifrado.
+**/appsettings.Development.json
+
+# Resultados de pruebas y cobertura.
+**/TestResults/
+**/coverage/
+**/*.trx
+
+**/.vs/
+**/.vscode/
+Dockerfile
+.dockerignore

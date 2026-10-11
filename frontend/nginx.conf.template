@@ -1,0 +1,88 @@
+# Plantilla, no configuracion final: la imagen de nginx corre `envsubst` sobre
+# todo lo que haya en `/etc/nginx/templates/` al arrancar y deja el resultado en
+# `/etc/nginx/conf.d/`.
+#
+# Lo unico que se sustituye es `API_UPSTREAM` —lo fija `NGINX_ENVSUBST_FILTER`
+# en el Dockerfile— porque este archivo esta lleno de variables de nginx:
+# `$uri`, `$host`, `$remote_addr`. Sin el filtro, envsubst las reemplazaria por
+# vacio y el proxy dejaria de pasar cabeceras.
+#
+# Hace falta porque el destino de la API cambia con el entorno y no con el
+# codigo: `api:8080` es el nombre del servicio en Docker Compose, y en Fly.io la
+# API vive en otra aplicacion, `predictit-api.internal:8080`, sobre la red
+# privada. Antes estaba escrito a mano y por eso la imagen solo servia para
+# compose.
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    include /etc/nginx/cabeceras-de-seguridad.conf;
+
+    # No anunciar la versión de nginx: es información gratis para quien busca un
+    # exploit conocido.
+    server_tokens off;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # El desafio de Let's Encrypt, antes que cualquier otra cosa.
+    #
+    # Va aca y no solo en `nginx-tls.conf` porque el primer certificado se pide
+    # **sin** TLS: en ese momento el que responde es este archivo. Sin esta
+    # ubicacion, la SPA se come la peticion —`try_files` manda todo a
+    # `index.html`— y la autoridad certificadora recibe el HTML de la
+    # aplicacion en lugar del testigo, con lo que no emite el certificado.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # La API, por detrás del mismo origen.
+    #
+    # Así el frontend pide a `/api` y nunca sabe dónde vive el backend: la URL no
+    # entra al bundle, y no hay CORS que resolver porque para el navegador es el
+    # mismo origen. Es el equivalente del proxy de Vite en desarrollo.
+    location /api/ {
+        proxy_pass         http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        # Sin esto, la bitácora registra la IP del contenedor de nginx en cada
+        # inicio de sesión, que es siempre la misma y no sirve para auditar.
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    # Swagger, por el mismo proxy.
+    #
+    # Asi la API no necesita direccion publica propia: en el despliegue vive en
+    # la red privada y lo unico que mira a internet es este nginx. Una sola
+    # superficie expuesta, un solo certificado, y la documentacion de la API
+    # disponible para quien evalua sin abrir el backend al mundo.
+    location /swagger {
+        proxy_pass         http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    # Los assets llevan hash en el nombre, así que se pueden cachear para
+    # siempre: un cambio produce otro nombre de archivo.
+    location /assets/ {
+        include /etc/nginx/cabeceras-de-seguridad.conf;
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+    }
+
+    # Cualquier otra ruta va al index: es una SPA con enrutamiento del lado del
+    # cliente. Sin esto, recargar en /incidencias/nueva devuelve 404, porque ese
+    # archivo no existe en el disco.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

@@ -1,0 +1,215 @@
+/* PredictIT · Órbita. Azul: acción y marca; rojo/ámbar/verde: riesgo y estado;
+   violeta: procedencia IA. Separadores decorativos suaves, controles con borde AA.
+   Cada tema declara todos sus colores. La interfaz sólo consume tokens.
+   Las densidades conservan los valores persistidos y el tamaño tipográfico. */
+
+:root {
+  
+  --fuente-ui: 'Plus Jakarta Sans', system-ui, sans-serif;
+  
+  /* La que usa el prototipo, y la que el index.html venia descargando sin que
+     nadie la usara: el token apuntaba a Cascadia, asi que la fuente se bajaba
+     y el navegador dibujaba con Consolas. */
+  --fuente-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --txt-cifra: 36px;    --peso-cifra: 800;    
+  --txt-titulo: 20px;   --peso-titulo: 700;   
+  --txt-seccion: 14.5px;  --peso-seccion: 600;  
+  --txt-cuerpo: 13px;                       
+  --txt-tabla: 12.5px;                          
+  --txt-micro: 10.5px;                          
+  --interlineado-parrafo: 1.45;
+
+  
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-12: 48px;
+
+  
+  --radio-chico: 6px;
+  --radio-chip: 8px;
+  --radio-campo: 8px;
+  --radio-tarjeta: 14px;
+  --radio-modal: 18px;
+
+  
+  --ancho-sidebar: 240px;
+  --ancho-confignav: 210px;
+  
+  --ancho-panel: 340px;
+  --alto-control: 36px;
+  
+  --alto-tactil: 48px;
+  --icono-nav: 18px;
+  --icono-boton: 15px;
+  --trazo-icono: 1.6;
+
+  
+  --alto-forma: '\25B2';   
+  --medio-forma: '\25C6';  
+  --bajo-forma: '\25CF';   
+  --prio-barras: 4;        
+}
+
+[data-densidad='compacta'] {
+  --fila-alto: 34px;   /* carga y auditoría: 17 filas en un 1366 */
+  --radio-tabla: 10px;
+  --esp-tabla: 8px;
+  --esp-seccion: 12px;
+}
+
+[data-densidad='normal'] {
+  --fila-alto: 48px;   /* 12 filas */
+  --radio-tabla: 16px;
+  --esp-tabla: 12px;
+  --esp-seccion: 16px;
+}
+
+[data-densidad='amplia'] {
+  --fila-alto: 60px;   /* pantallas grandes y tableros */
+  --radio-tabla: 16px;
+  --esp-tabla: 16px;
+  --esp-seccion: 24px;
+}
+
+[data-tema='oscuro'] {
+  --fondo: #060a16;
+  --lienzo: #090e1e;
+  --sup: #0d1527;
+  --sup-2: #14203a;
+  --neutro-bg: var(--sup-2);
+  --fila-hover: rgba(53, 103, 236, 0.06);
+  --tx: #f8fafc;
+  --tx2: #9aa9c9;
+  --tx3: #adbed4;
+  --tx-neutro: #adbed4;
+  --linea: #1c2743;
+  --linea-suave: #131c33;
+  --linea-fuerte: #56699e;
+  --acento: #3567ec;
+  --acento-hover: #3569ff;
+  --acento-suave: rgba(59, 110, 246, 0.16);
+  --sobre-acento: #ffffff;
+  --acento-tx: #6d9bff;
+  --alto-tx: #ff8a94;
+  --alto-bg: rgba(255, 77, 94, 0.16);
+  --alto-borde: rgba(255, 77, 94, 0.4);
+  --alto-barra: #ff4d5e;
+  --alto-fila: rgba(255, 77, 94, 0.06);
+  --alto-control: #e11d48;
+  --medio-tx: #f5c65c;
+  --medio-bg: rgba(240, 180, 41, 0.16);
+  --medio-borde: rgba(240, 180, 41, 0.38);
+  --medio-barra: #f0b429;
+  --bajo-tx: #4fe0b4;
+  --bajo-bg: rgba(46, 211, 160, 0.14);
+  --bajo-borde: rgba(46, 211, 160, 0.38);
+  --bajo-barra: #2ed3a0;
+  --prio-critica: #ff4d5e;
+  --prio-alta: #ff8a3d;
+  --prio-media: #f0b429;
+  --prio-baja: #7c89a6;
+  --est-pendiente: #adbed4;
+  --est-asignada: #5ac8fa;
+  --est-curso: #f0b429;
+  --est-repuesto: #f472b6;
+  --est-resuelta: #2ed3a0;
+  --est-cerrada: #8592ad;
+  --est-anulada: #adbed4;
+  --ia-bg: #201e35;
+  --ia-tx: #c4aeff;
+  --ia-borde: rgba(167, 139, 250, 0.4);
+  --ia-solido: #a78bfa;
+  --sobre-ia: #160f2e;
+  --resp-bg: rgba(240, 180, 41, 0.08);
+  --resp-tx: #f5c65c;
+  --resp-borde: rgba(240, 180, 41, 0.5);
+  --manual-bg: var(--sup-2);
+  --manual-tx: var(--tx2);
+  --glow-fondo: none;
+  --elev-plana: none;
+  --elev-flotante: 0 24px 48px rgba(6, 10, 22, 0.6);
+  --nav-fondo: #0d1527;
+  --nav-tx: #f8fafc;
+  --nav-secundario: #9aa9c9;
+  --nav-activo: rgba(59, 110, 246, 0.16);
+  --nav-acento: #6d9bff;
+  --nav-linea: #1c2743;
+  --elev-tarjeta: none;
+  --sup-hover: #192745;
+  --tx-desactivado: #475569;
+}
+
+[data-tema='claro'] {
+  --fondo: #f5f7fd;
+  --lienzo: #edf1fb;
+  --sup: #ffffff;
+  --sup-2: #edf1fb;
+  --neutro-bg: var(--sup-2);
+  --fila-hover: #f7f9fe;
+  --tx: #0c1428;
+  --tx2: #4a5878;
+  --tx3: #5b6a88;
+  --tx-neutro: #556880;
+  --linea: #e2e8f5;
+  --linea-suave: #edf1fb;
+  --linea-fuerte: #7a89b0;
+  --acento: #2952d8;
+  --acento-hover: #1e43bc;
+  --acento-suave: rgba(41, 82, 216, 0.08);
+  --sobre-acento: #ffffff;
+  --acento-tx: #2952d8;
+  --alto-tx: #c0263a;
+  --alto-bg: #fdf2f4;
+  --alto-borde: #f3c6cc;
+  --alto-barra: #c0263a;
+  --alto-fila: #fef7f8;
+  --alto-control: #b3202f;
+  --medio-tx: #8a5b00;
+  --medio-bg: #fcf6e6;
+  --medio-borde: #efd9a8;
+  --medio-barra: #8a5b00;
+  --bajo-tx: #09734e;
+  --bajo-bg: #ecfaf4;
+  --bajo-borde: #bfe9d9;
+  --bajo-barra: #09734e;
+  --prio-critica: #c0263a;
+  --prio-alta: #b4520a;
+  --prio-media: #8a5b00;
+  --prio-baja: #5c6b8a;
+  --est-pendiente: #5c6b8a;
+  --est-asignada: #0062fe;
+  --est-curso: #8a5b00;
+  --est-repuesto: #be185d;
+  --est-resuelta: #09734e;
+  --est-cerrada: #4a5878;
+  --est-anulada: #556880;
+  --ia-bg: #f8f4ff;
+  --ia-tx: #6929c4;
+  --ia-borde: #d4bbff;
+  --ia-solido: #8a3ffc;
+  --sobre-ia: #ffffff;
+  --resp-bg: #fcf6e6;
+  --resp-tx: #8a5b00;
+  --resp-borde: #efd9a8;
+  --manual-bg: var(--sup-2);
+  --manual-tx: var(--tx2);
+  --glow-fondo: none;
+  --elev-plana: none;
+  --elev-flotante: 0 18px 40px rgba(12, 20, 40, 0.12);
+  --nav-fondo: #ffffff;
+  --nav-tx: #0c1428;
+  --nav-secundario: #4a5878;
+  --nav-activo: rgba(41, 82, 216, 0.08);
+  --nav-acento: #2952d8;
+  --nav-linea: #e2e8f5;
+  --elev-tarjeta: 0 3px 8px rgba(18, 43, 72, 0.04);
+  --sup-hover: #e4eaf8;
+  --tx-desactivado: #94a3b8;
+}
+
+:where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--acento-tx); outline-offset: 3px; }
