@@ -20,6 +20,12 @@
 
     Uso:  .\db\restaurar-demo.ps1              (muestra el plan, no toca nada)
           .\db\restaurar-demo.ps1 -Si          (borra y rehace)
+
+    Probado el 15/10/2026 contra el contenedor real, y probado de la unica
+    manera que sirve: rompiendo primero. Se borraron las veinte incidencias de
+    la demo y volvieron las veinte, con las dos organizaciones, los 54 equipos
+    y los seis usuarios intactos. Despues la API reinicio sana y el login de
+    admin y de tecnico1 devolvio token.
 #>
 param(
     [string]$Contenedor  = 'predictit-sql',
