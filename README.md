@@ -10,7 +10,8 @@ Tecnología Informática. Alumno: Pettini, Patricio Ezequiel.
 > **El sistema, funcionando:
 > https://predictit-uai.mexicocentral.cloudapp.azure.com** — con Swagger en
 > [`/swagger`](https://predictit-uai.mexicocentral.cloudapp.azure.com/swagger) y
-> los usuarios de demostración de más abajo. Corre en Microsoft Azure con
+> los usuarios de demostración que el documento de la entrega detalla. Corre
+> en Microsoft Azure con
 > `docker compose`. Si la dirección no responde, la máquina está apagada
 > para no consumir crédito.
 
@@ -108,12 +109,20 @@ separados a propósito: con un solo trabajo, el primer fallo esconde todo lo dem
 
 ### Usuarios de demo
 
-| Usuario | Contraseña | Perfil |
-|---|---|---|
-| `admin` | `Admin.2026` | Administrador |
-| `tecnico1` · `tecnico2` · `tecnico3` | `Tecnico.2026` | Responsable Técnico |
-| `solicitante` | `Usuario.2026` | Usuario Solicitante |
-| `partner` | `Partner.2026` | Partner (multi-organización) |
+Hay cuatro perfiles de prueba —Administrador, Responsable Técnico, Usuario
+Solicitante y Partner— y conviene entrar con más de uno, porque cada uno ve un
+sistema distinto: los permisos se resuelven con patentes y familias.
+
+**Las credenciales no están en este archivo.** Van en el documento de la
+entrega y en el mensaje a la cátedra. El motivo es simple: este repositorio es
+público y el enlace de arriba apunta a un sistema que está corriendo, así que
+publicar un usuario administrador al lado de su dirección es ofrecerle a
+cualquiera que lo rompa. Los datos son de demostración y se pueden restaurar
+—`db/restaurar-demo.ps1`, un comando—, pero restaurarlos no es gratis si pasa
+el día de la corrección.
+
+Si estás evaluando este trabajo y no tenés las credenciales a mano, están en la
+primera página del documento que acompaña la entrega.
 
 ## Documentación
 

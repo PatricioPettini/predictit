@@ -63,6 +63,13 @@ demostración; no hay que correr nada más.
 | `solicitante` | `Usuario.2026` | Usuario Solicitante |
 | `partner` | `Partner.2026` | Partner (varias organizaciones) |
 
+> **Estas credenciales son las del seed y valen para tu instalación local.**
+> Están acá porque sin ellas el repositorio no se puede ejecutar. Si vas a
+> dejar el sistema accesible desde internet, cambiálas antes: son públicas y
+> previsibles, y `admin` puede borrar cualquier cosa. La instancia de
+> demostración que acompaña la entrega usa credenciales propias, que no están
+> en este repositorio.
+
 ### 4. Apagar
 
 ```
@@ -71,6 +78,21 @@ docker compose down
 
 Los datos quedan en un volumen: al volver a levantar está todo como estaba. Para
 empezar de cero, `docker compose down -v`.
+
+### Volver la demostración al estado inicial
+
+`docker compose down -v` borra el volumen entero y obliga a levantar todo de
+nuevo. Si lo único que hace falta es deshacer lo que alguien cargó o borró
+—que es el caso cuando el sistema está publicado—, alcanza con:
+
+```powershell
+.\db\restaurar-demo.ps1       # muestra qué va a hacer y no toca nada
+.\db\restaurar-demo.ps1 -Si   # borra las dos bases y las rehace desde db/
+docker compose restart api
+```
+
+`aplicar.ps1` no sirve para esto: sus scripts sólo insertan lo que falta, así
+que ponen al día una base pero no revierten lo que se modificó.
 
 ---
 
