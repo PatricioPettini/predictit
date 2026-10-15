@@ -53,8 +53,10 @@ docker compose up -d          # SQL Server 2022
 cd backend; dotnet test       # tiene que dar todo verde
 ```
 
-Usuarios de demo: `admin / Admin.2026`, `tecnico1..3 / Tecnico.2026`,
-`solicitante / Usuario.2026`, `partner / Partner.2026`.
+Usuarios de demo: `admin`, `tecnico1..3`, `solicitante` y `partner`. Las
+contraseñas están en el documento de la entrega, no en el repositorio:
+éste es público y el sistema está desplegado. Para generar unas nuevas,
+`.\db\cambiar-contrasenas-demo.ps1 -Si`.
 
 ## Entregables de transparencia (obligatorios, no opcionales)
 

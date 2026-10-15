@@ -190,12 +190,15 @@ Write-Host @'
   API         http://localhost:5099
   Swagger     http://localhost:5099/swagger
 
-  Usuarios de demostracion (verificados contra los hashes del seed):
+  Usuarios de demostracion:
 
-    admin         Admin.2026      Administrador del Estudio Pettini
-    tecnico1      Tecnico.2026    Responsable Tecnico
-    solicitante   Usuario.2026    Usuario Solicitante (modulo del cliente)
-    partner       Partner.2026    Partner: administra dos organizaciones
+    admin                         Administrador del Estudio Pettini
+    tecnico1                      Responsable Tecnico
+    solicitante                   Usuario Solicitante (modulo del cliente)
+    partner                       Partner: administra dos organizaciones
+
+  Las contrasenas no estan en el repositorio, que es publico. Para generar
+  las tuyas:  .\db\cambiar-contrasenas-demo.ps1 -Si
 
   Que mirar:
     /activos                52 equipos, filtros y detalle con garantia

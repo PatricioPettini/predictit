@@ -371,12 +371,15 @@ builder.Services.AddSwaggerGen(c =>
             "Gestión y mantenimiento predictivo de equipos informáticos para PyMEs.\n\n"
             + "Trabajo Final de Ingeniería · Patricio Pettini · Universidad Abierta "
             + "Interamericana.\n\n"
-            + "**Para probar:** entrar por `POST /api/auth/login` con "
-            + "`admin / Admin.2026`, copiar el token de la respuesta y pegarlo en "
-            + "«Authorize», arriba a la derecha. Los otros usuarios de demostración "
-            + "son `tecnico1 / Tecnico.2026` y `solicitante / Usuario.2026`, y "
-            + "muestran perfiles con distintos permisos: el mismo endpoint devuelve "
-            + "200 o 403 según quién lo pida.",
+            // Las credenciales no van acá: esta descripción se publica en
+            // /swagger, abierta y sin autenticar, así que ponerlas sería
+            // repartirlas a cualquiera que entre al sistema.
+            + "**Para probar:** entrar por `POST /api/auth/login` con alguno de los "
+            + "usuarios de demostración —sus credenciales están en el documento de "
+            + "la entrega—, copiar el token de la respuesta y pegarlo en "
+            + "«Authorize», arriba a la derecha. Hay un perfil administrador, uno "
+            + "técnico y uno solicitante, y muestran permisos distintos: el mismo "
+            + "endpoint devuelve 200 o 403 según quién lo pida.",
     });
 
     foreach (var xml in Directory.GetFiles(AppContext.BaseDirectory, "PredictIT.*.xml"))

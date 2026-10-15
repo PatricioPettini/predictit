@@ -56,19 +56,22 @@ demostración; no hay que correr nada más.
 | Aplicación | <http://localhost:8080> |
 | API y Swagger | <http://localhost:8081/swagger> |
 
-| Usuario | Contraseña | Perfil |
-|---|---|---|
-| `admin` | `Admin.2026` | Administrador |
-| `tecnico1` … `tecnico3` | `Tecnico.2026` | Responsable Técnico |
-| `solicitante` | `Usuario.2026` | Usuario Solicitante |
-| `partner` | `Partner.2026` | Partner (varias organizaciones) |
+Para entrar hay cuatro perfiles de demostración —Administrador, Responsable
+Técnico, Usuario Solicitante y Partner— y conviene probar con más de uno,
+porque cada uno ve un sistema distinto.
 
-> **Estas credenciales son las del seed y valen para tu instalación local.**
-> Están acá porque sin ellas el repositorio no se puede ejecutar. Si vas a
-> dejar el sistema accesible desde internet, cambiálas antes: son públicas y
-> previsibles, y `admin` puede borrar cualquier cosa. La instancia de
-> demostración que acompaña la entrega usa credenciales propias, que no están
-> en este repositorio.
+**Las contraseñas no están en este repositorio.** Es público y el sistema de
+demostración está desplegado, así que publicarlas al lado de su dirección es
+ofrecerle a cualquiera que lo rompa. Para generar las tuyas, con las bases ya
+levantadas:
+
+```powershell
+.\db\cambiar-contrasenas-demo.ps1 -Si
+```
+
+Te las muestra en pantalla y las deja en `db/credenciales-nuevas.txt`, que git
+ignora. Si estás evaluando el trabajo, las de la instancia publicada están en
+el documento que acompaña la entrega.
 
 ### 4. Apagar
 

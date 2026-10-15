@@ -242,8 +242,11 @@ GO
 /* --------------------------------------------------------------- Usuarios
    Contraseñas de demo (PBKDF2-SHA256, 600.000 iteraciones, la
    recomendación de OWASP):
-     admin / Admin.2026      · tecnico1..3 / Tecnico.2026
-     solicitante / Usuario.2026   · partner / Partner.2026            */
+     Las contrasenas en claro no se escriben aca: este archivo es publico.
+     Que no esten escritas no las vuelve secretas -los hashes de abajo son
+     los de contrasenas de demostracion conocidas-, asi que cualquier
+     despliegue accesible desde internet tiene que cambiarlas. Hay un
+     comando para eso: db/cambiar-contrasenas-demo.ps1                  */
 MERGE dbo.Usuario AS d
 USING (VALUES
     ('B0000000-0000-0000-0000-000000000001','Patricio','Pettini','admin@predictit.test','admin',
