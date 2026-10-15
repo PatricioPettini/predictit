@@ -50,3 +50,6 @@ frontend/.env.local
 # viejas y, con ese nombre, cualquiera que entra al repositorio buscando el
 # frontend se baja artboards de septiembre en vez del codigo.
 frontend/*.zip
+
+# Credenciales recien generadas: se copian al documento y se borran.
+db/credenciales-nuevas.txt
